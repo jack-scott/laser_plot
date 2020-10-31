@@ -96,7 +96,7 @@ if __name__ == "__main__":
     # points = clock.generate_circle_pol(40,80)
     # clock.plot_points_pol(points)
     # offset_points = clock.offset_points(points, 0,0)
-    square = clock.generate_rect_cart(5, 5, -5, 10, 20)
+    square = clock.generate_rect_cart(5, 5, -5, 10, 31)
     # clock.plot_points_cart(square) 
     square_pol = clock.convert_to_pol(square)
     print(square_pol)
