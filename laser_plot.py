@@ -128,6 +128,7 @@ class Point(object):
 
 
 class Vector(object):
+    # For info on adding new types to this class reference the svg.path module https://pypi.org/project/svg.path/
     def __init__(self):
         self.vect_obj = None
         self._get_point_vec = None
@@ -147,6 +148,11 @@ class Line(Vector):
         func = lambda x: Point(complex_num=self.vect_obj.point(x))
         self._get_point_vec = np.vectorize(func)
 
+class Path(Vector):
+    def __init__(self, svg_path):
+        self.vect_obj = svg.path.parse_path(svg_path)
+        func = lambda x: Point(complex_num=self.vect_obj.point(x))
+        self._get_point_vec = np.vectorize(func)
 
 class LaserPlot(object):
     def __init__(self, diameter=None, height=None, width=None):
@@ -224,7 +230,12 @@ if __name__ == "__main__":
     clock = Clock()
     points=[]
     # Point(complex_num=0+1j)
+    square_plot = LaserPlot(height= 400, width = 400)
     line = Line(Point(x=0,y=0), Point(x=10, y=10))
+    # path = Path('m 0.05357144,992.21517 2.07142876,-2.875')
+    # points = path.get_points(0.05)
+    # square_plot.plot(points)
+    # square_plot.show_plot()
     points = line.get_points(0.05)
     clock.plot(points)
     clock.show_plot()
