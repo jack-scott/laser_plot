@@ -5,6 +5,7 @@ import time
 import matplotlib.pyplot as plt
 import math
 import numpy as np
+import svg.path
 
 def cart_2_pol(x, y):
     try:
@@ -14,29 +15,55 @@ def cart_2_pol(x, y):
         print(e)
     return(r, theta)
 
+def cart_2_complex(x, y):
+    return(complex(x,y))
+
 def pol_2_cart(r, theta):
     x = r * np.cos(theta)
     y = r * np.sin(theta)
     return(x, y)
 
+def pol_2_complex(r, theta):
+    x, y = pol_2_cart(r,theta)
+    return(complex(x, y))
+
+def complex_2_cart(complex_num):
+    x = complex_num.real
+    y = complex_num.imag
+    return(x,y)
+
+def complex_2_pol(complex_num):
+    x = complex_num.real
+    y = complex_num.imag
+    return(cart_2_pol(x,y))
+
+
 
 # point class adapted from stackoverflow: https://stackoverflow.com/questions/20924085/python-conversion-between-coordinates
 
 class Point(object):
-    def __init__(self, x=None, y=None, r=None, theta=None):
+    def __init__(self, x=None, y=None, r=None, theta=None, complex_num=None):
         """x and y or r and theta(radians)
         """
         if x is not None and y is not None:
             self._init_rect(x, y)
         elif r is not None and theta is not None:
             self._init_polar(r, theta)
+        elif complex_num is not None:
+            self._init_complex(complex_num)
         else:
             raise ValueError('Must specify x and y or r and theta')
             
     def _init_rect(self, x, y):
         self._x = x
         self._y = y
+        self._complex = cart_2_complex(self._x, self._y)
         self._r, self._theta = cart_2_pol(self._x, self._y)
+
+    def _init_complex(self, complex_num):
+        self._complex = complex_num
+        self._x, self._y = complex_2_cart(self._complex)
+        self._r, self._theta = complex_2_pol(self._complex)
 
     def _init_polar(self, r, theta):
         """theta in radians
@@ -45,6 +72,7 @@ class Point(object):
         self._theta = theta
         self._theta_radians = math.radians(theta)
         self._x, self._y = pol_2_cart(self._r, self._theta)
+        self._complex = pol_2_complex(self._r, self._theta)
 
     def set_x(self, x):
         self._init_rect(x, self._y)   
@@ -86,8 +114,38 @@ class Point(object):
         return self._r, self._theta
     r_theta = property(fget = get_r_theta, fset = set_r_theta)
     
+    def set_complex(self, complex_num):
+        self._init_complex(complex_num)
+
+    def get_complex(self):
+        return self._complex
+    complex_num = property(fget = get_complex, fset= set_complex)
+
+    # TODO - make getter and setter methods for the complex type
+
     def __str__(self):
         return '({},{})'.format(self._x, self._y)
+
+
+class Vector(object):
+    def __init__(self):
+        self.vect_obj = None
+        self._get_point_vec = None
+        # self._get_point_obj_vec = np.vectorize(Point)
+
+    def get_point(self, pos):
+        return Point(self.vect_obj.point[pos])
+
+    def get_points(self, resolution):
+        arr = np.arange(0,1, resolution)
+        points = self._get_point_vec(arr)
+        return points
+class Line(Vector):
+    def __init__(self, start, end):
+        #TODO - Add a check to make sure inputs are of type Point
+        self.vect_obj = svg.path.Line(start.complex_num, end.complex_num)
+        func = lambda x: Point(complex_num=self.vect_obj.point(x))
+        self._get_point_vec = np.vectorize(func)
 
 
 class LaserPlot(object):
@@ -151,18 +209,24 @@ class LaserPlot(object):
 
 
 class Clock(LaserPlot):
+    # Using a hardware setup with a 200 step/rev stepper motor and a pulley reduction of 1/3.7
+    # this means we have 741 steps per revolution. Also assuming a microstep of 1:8 this gives us 
+    # 5929 steps of resolution in a rotation. 
+    # Also assume we have 350 different steps of resolution in the radial direction
     def __init__(self):
         super(Clock, self).__init__(diameter=350)
+        _rotational_resolution = 5929   #steps per 360 degrees
+        _radial_resolution = 350    #steps over 350mm
+
 
 
 if __name__ == "__main__":
     clock = Clock()
     points=[]
-    # points.append(clock.add_point(_r=30, _theta=0.75))
-    # clock.plot(points)
-    # clock.show_plot()
-    # laser =LaserPlot(height=20, width=20)
-    # points.append(laser.add_point(_x=10, _y=10))
-    # laser.plot(points)
-    # laser.show_plot()
+    # Point(complex_num=0+1j)
+    line = Line(Point(x=0,y=0), Point(x=10, y=10))
+    points = line.get_points(0.05)
+    clock.plot(points)
+    clock.show_plot()
+
 
